@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.mulesoft.java</groupId>
 	<artifactId>CpsTool</artifactId>
-	<version>1.0.0</version>
+	<version>1.1.0</version>
 	<name>Configuration Property Service Tool</name>
 	<properties>
 		<jdk.version>1.8</jdk.version>
