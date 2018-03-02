@@ -1,0 +1,35 @@
+{
+	"projectName": "myproject",
+	"branchName": "mybranch",
+	"instanceId": "site01",
+	"keyId": "testkey",
+	"envName": "QA",
+	"parents": [{
+		"projectName": "Globals",
+		"branchName": "base",
+		"instanceId": "base",
+		"keyId": "keyTwo",
+		"envName": "QA"
+	}, {
+		"projectName": "Shared",
+		"branchName": "base",
+		"instanceId": "base",
+		"keyId": "keyTwo",
+		"envName": "QA"
+	}],
+	"properties": {
+		"secure.properties": "another.property,cipher.text.properties",
+		"a.b.c": "myvalue",
+		"my.second.property": "another value",
+		"another.property": "![xc0fyRJJG4SBrXWx2OtmuVEAMbAqJPIRQWaVee1oia0=]",
+		"cipher.text.properties": "![AkzG7ebwoFTgNjEpc1jfeOqzFcl6ZlgVUW14wmvjYa0=]"
+	},
+	"documents": [{
+		"key": "mymapping",
+		"type": "application/json"
+	}, {
+		"key": "routes",
+		"type": "application/json"
+	}],
+	"cipherKey": "99dd77ac802044832d1505e6087cc13522e0a0a7ff2ab3c7ab29c25243c44eb7a7c6b5de5f1d3b394df4203cf011bced093e12bfe2a0ad6c2af91bfc3341f9d34def55a2a387564b04068d2d2d25a9368ddd1e49b3a410ff24da06a2b29b057de4d8b2963fca9ce76ab28185827e2db70c9a351327cb04a0978a3658508416defd34ed4f6251ced28fa66fdead05b45e26af6a5d6715eb5d165a2d33bdd4ed2e5da53adf0df42a3be697cb23db9be27c8f0ff5dc5146fa204ca80daff5fb3800f4579addd52e219421fcb61435bf98840607455e84da93b7134c996bf854794f20b5ab90c0781815836be20c244f74f58576d9a9df9b394aeb2db3783a0037c8"
+}

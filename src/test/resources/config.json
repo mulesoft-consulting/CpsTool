@@ -1,0 +1,38 @@
+{
+	"projectName": "myproject",
+	"branchName": "mybranch",
+	"instanceId": "site01",
+	"keyId": "testkey",
+	"envName": "QA",
+	"parents": [{
+			"projectName": "Globals",
+			"branchName": "base",
+			"instanceId": "base",
+			"keyId": "keyTwo",
+			"envName": "QA"
+		},
+		{
+			"projectName": "Shared",
+			"branchName": "base",
+			"instanceId": "base",
+			"keyId": "keyTwo",
+			"envName": "QA"
+		}
+	],
+	"properties": {
+		"secure.properties": "another.property,cipher.text.properties",
+		"a.b.c": "myvalue",
+		"my.second.property": "another value",
+		"another.property": "Third value, why not?",
+		"cipher.text.properties": "base64 encoded cipher text"
+	},
+	"documents": [{
+			"key": "mymapping",
+			"type": "application/json"
+		},
+		{
+			"key": "routes",
+			"type": "application/json"
+		}
+	]
+}
