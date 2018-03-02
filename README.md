@@ -19,6 +19,9 @@ curl -k -H "client_id:bc80c73ad5fb4f21b4fc620c443eecac" -H "client_secret:D2Df58
 ## To pull, re-encrypt with new key and push
 curl -k -H "client_id:bc80c73ad5fb4f21b4fc620c443eecac" -H "client_secret:D2Df58ae2a0f46e6882A69D51463e411" https://localhost:9084/configuration-property-service/v1/config/base/base/base/base/testkey | java -jar target/CpsTool.jar re-encrypt testkey2 | curl -k -H "client_id:bc80c73ad5fb4f21b4fc620c443eecac" -H "client_secret:D2Df58ae2a0f46e6882A69D51463e411" -H "edit_token:xx" -H "Content-Type:application/json" -X POST --data @-  https://localhost:9084/configuration-property-service/v1/config
 
+## To convert a property file to a config file
+java -jar target/CpsTool.jar property-file myproject mybranch site01 local base <src/test/resources/test.properties
+
 ## Required environment variables
 The encryption depends on keys stored in a keystore file. The keys are RSA key pairs where the keystore alias is the keyId. To point to the correct keystore, set these variables:
 
