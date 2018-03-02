@@ -13,6 +13,7 @@
 	</properties>
 
 	<build>
+		<finalName>CpsTool</finalName>
 		<plugins>
 			<!-- download source code in Eclipse, best practice -->
 			<plugin>
@@ -120,7 +121,7 @@
 		<dependency>
 			<groupId>org.mule.consulting</groupId>
 			<artifactId>cps-encryption</artifactId>
-			<version>1.0.0</version>
+			<version>1.1.0</version>
 		</dependency>
 	</dependencies>
 

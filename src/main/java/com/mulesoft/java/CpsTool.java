@@ -1,7 +1,11 @@
 package com.mulesoft.java;
 
+import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
 import org.mule.consulting.cps.encryption.CpsEncryptor;
@@ -12,10 +16,15 @@ import com.fasterxml.jackson.databind.type.TypeFactory;
 
 public class CpsTool {
 
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) {
+		System.err.println("CpsTool version 1.1\n");
 		try {
 			if (args.length <= 0) {
 				printHelp();
+			} else if (args[0].equals("pretty")) {
+				String data = IOUtils.toString(System.in, "UTF8");
+				String json = pretty(data);
+				System.out.println(json);
 			} else if (args[0].equals("decrypt")) {
 				String data = IOUtils.toString(System.in, "UTF8");
 				String json = decrypt(data);
@@ -25,12 +34,21 @@ public class CpsTool {
 				String data = IOUtils.toString(System.in, "UTF8");
 				String json = encrypt(argKeyId, data);
 				System.out.println(json);
-			} else if (args[0].equals("rotateKey")) {
+			} else if (args[0].equals("re-encrypt")) {
 				String argKeyId = (args.length > 1) ? args[1] : null;
 				String data = IOUtils.toString(System.in, "UTF8");
 				String jsonData = decrypt(data);
 				String json = encrypt(argKeyId, jsonData);
 				System.out.println(json);
+			} else if (args[0].equals("property-file")) {
+				Properties properties = new Properties();
+				properties.load(System.in);
+				String json = propertyFile(properties, (args.length>1)?args[1]:"", (args.length>2)?args[2]:"", 
+						(args.length>3)?args[3]:"", (args.length>4)?args[4]:"", 
+								(args.length>5)?args[5]:"");
+				System.out.println(json);
+			} else {
+				printHelp();
 			}
 		} catch (Exception e) {
 			e.printStackTrace(System.err);
@@ -148,7 +166,7 @@ public class CpsTool {
 			System.err.println(msg);
 			throw new Exception(msg);
 		}
-		
+
 		Map<String, String> properties = (Map<String, String>) payload.get("properties");
 		boolean priorEncryptions = false;
 		for (String key : properties.keySet()) {
@@ -178,6 +196,47 @@ public class CpsTool {
 		return new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(payload);
 	}
 
+	private static String propertyFile(Properties properties, String projectName, String branchName, String instanceId,
+			String envName, String keyId) throws Exception {
+		LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
+		LinkedHashMap<String, Object> payload = new LinkedHashMap<String, Object>();
+
+		payload.put("projectName", projectName);
+		payload.put("branchName", branchName);
+		payload.put("instanceId", instanceId);
+		payload.put("envName", envName);
+		payload.put("keyId", keyId);
+
+		ArrayList<Object> empty = new ArrayList<Object>();
+		payload.put("parents", empty.toArray());
+		for (Object k : properties.keySet()) {
+			String key = (String) k;
+			String value = properties.getProperty(key);
+			map.put(key, value);
+		}
+		payload.put("properties", map);
+
+		ObjectMapper mapperw = new ObjectMapper();
+		String result = mapperw.writerWithDefaultPrettyPrinter().writeValueAsString(payload);
+		return result;
+	}
+
+	private static String pretty(String data) throws Exception {
+		Map<String, Object> payload;
+		ObjectMapper mapper;
+		TypeFactory factory;
+		MapType type;
+
+		factory = TypeFactory.defaultInstance();
+		type = factory.constructMapType(LinkedHashMap.class, String.class, Object.class);
+		mapper = new ObjectMapper();
+		payload = mapper.readValue(data, type);
+
+		ObjectMapper mapperw = new ObjectMapper();
+		String result = mapperw.writerWithDefaultPrettyPrinter().writeValueAsString(payload);
+		return result;
+	}
+
 	private static void printHelp() {
 		System.out.println("\nUsage: java -jar CpsTool {operation} [parameters]\n");
 		System.out.println("  operations:");
@@ -186,9 +245,11 @@ public class CpsTool {
 		System.out.println("      parameters:");
 		System.out.println(
 				"        keyId         The keyId to use for unencrypted file, will be ignored if the file contains encrypted data");
-		System.out.println("    rotateKey         Read stdin and re-encrypt with new key to stdout");
+		System.out.println("    re-encrypt         Read stdin and re-encrypt with new key to stdout");
 		System.out.println("      parameters:");
 		System.out.println("        keyId         The keyId to use for new encryption (required)");
+		System.out.println("    pretty            Read stdin and send a pretty version to stdout");
+		System.out.println("    property-file     Read a property file from stdin and print config to stdout");
 		System.out.println("\n");
 	}
 }
