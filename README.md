@@ -25,3 +25,6 @@ The encryption depends on keys stored in a keystore file. The keys are RSA key p
 mule_cps_keystore_filename=<path to keystore.jks file>
 mule_cps_keystore_password=<the keystore's password (defaults to "")>
 mule_cps_key_password=<the password for the keys (note that all the passwords use must have the same password)>
+
+## Dependency
+Note that the project cps-encryption contains the encryption library used by the tool.
