@@ -208,7 +208,7 @@ public class CpsTool {
 		payload.put("keyId", keyId);
 
 		ArrayList<Object> empty = new ArrayList<Object>();
-		payload.put("parents", empty.toArray());
+		payload.put("imports", empty.toArray());
 		for (Object k : properties.keySet()) {
 			String key = (String) k;
 			String value = properties.getProperty(key);
