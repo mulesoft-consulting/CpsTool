@@ -333,10 +333,14 @@ public class CpsTool {
 		System.out.println("\nUsage: java -jar CpsTool {operation} [parameters]\n");
 		System.out.println("  operations:");
 		System.out.println("    decrypt           Read stdin and decrypt to stdout");
-		System.out.println("    encrypt           Read stdin and encrypt to stdout");
+		System.out.println("    public-encrypt    Read stdin and encrypt to stdout using <keyId>.pem file containing the public key");
 		System.out.println("      parameters:");
 		System.out.println(
-				"        keyId         The keyId to use for unencrypted file, will be ignored if the file contains encrypted data");
+				"        keyId         The keyId to use for encrypting the data and for providing the name of the pem file.");
+		System.out.println("    encrypt           Read stdin and encrypt to stdout using configured keystore");
+		System.out.println("      parameters:");
+		System.out.println(
+				"        keyId         The keyId to use for encrypting data, will be ignored if the file contains encrypted data");
 		System.out.println("    re-encrypt         Read stdin and re-encrypt with new key to stdout");
 		System.out.println("      parameters:");
 		System.out.println("        keyId         The keyId to use for new encryption (required)");
