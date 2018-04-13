@@ -1,14 +1,19 @@
 package com.mulesoft.java;
 
+import java.io.File;
 import java.io.InputStream;
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.mule.consulting.cps.encryption.CpsEncryptor;
+import org.mule.consulting.cps.encryption.CpsKey;
+import org.mule.consulting.cps.encryption.KeyStoreHelper;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.MapType;
@@ -34,6 +39,25 @@ public class CpsTool {
 				String data = IOUtils.toString(System.in, "UTF8");
 				String json = encrypt(argKeyId, data);
 				System.out.println(json);
+			} else if (args[0].equals("public-encrypt")) {
+				String argKeyId = (args.length > 1) ? args[1] : null;
+				if (argKeyId == null) {
+					String msg = "Need a keyId to be specified, cannot continue with encrypt";
+					System.err.println(msg);
+					throw new Exception(msg);
+				}
+				File pemFile = new File(argKeyId + ".pem");
+				if (!pemFile.exists() || !pemFile.isFile()) {
+					String msg = "Need the file " + pemFile.getAbsolutePath()
+							+ " to be present, cannot continue with encrypt";
+					System.err.println(msg);
+					throw new Exception(msg);
+				}
+				InputStream is = FileUtils.openInputStream(pemFile);
+				PublicKey publicKey = KeyStoreHelper.getPublicKeyFromPEM(is);
+				String data = IOUtils.toString(System.in, "UTF8");
+				String json = encrypt(publicKey, argKeyId, data);
+				System.out.println(json);
 			} else if (args[0].equals("re-encrypt")) {
 				String argKeyId = (args.length > 1) ? args[1] : null;
 				String data = IOUtils.toString(System.in, "UTF8");
@@ -43,9 +67,9 @@ public class CpsTool {
 			} else if (args[0].equals("property-file")) {
 				Properties properties = new Properties();
 				properties.load(System.in);
-				String json = propertyFile(properties, (args.length>1)?args[1]:"", (args.length>2)?args[2]:"", 
-						(args.length>3)?args[3]:"", (args.length>4)?args[4]:"", 
-								(args.length>5)?args[5]:"");
+				String json = propertyFile(properties, (args.length > 1) ? args[1] : "",
+						(args.length > 2) ? args[2] : "", (args.length > 3) ? args[3] : "",
+						(args.length > 4) ? args[4] : "", (args.length > 5) ? args[5] : "");
 				System.out.println(json);
 			} else {
 				printHelp();
@@ -139,6 +163,74 @@ public class CpsTool {
 				if (newCipherKeyGenerated) {
 					payload.put("cipherKey", cipherKey);
 				}
+				payload.put("properties", properties);
+			} else {
+				System.err.println("No properties encrypted");
+			}
+		}
+
+		return new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(payload);
+	}
+
+	@SuppressWarnings("unchecked")
+	private static String encrypt(PublicKey publicKey, String keyId, String data) throws Exception {
+		Map<String, Object> payload;
+		ObjectMapper mapper;
+		TypeFactory factory;
+		MapType type;
+
+		factory = TypeFactory.defaultInstance();
+		type = factory.constructMapType(LinkedHashMap.class, String.class, Object.class);
+		mapper = new ObjectMapper();
+		payload = mapper.readValue(data, type);
+
+		/* Start determining keyId */
+		payload.put("keyId", keyId);
+		String cipherKey = (String) payload.get("cipherKey");
+		if (cipherKey != null && !cipherKey.isEmpty()) {
+			String msg = "Data is already encrypted, decrypt it before using public key encrypt";
+			System.err.println(msg);
+			throw new Exception(msg);
+		}
+
+		Map<String, String> properties = (Map<String, String>) payload.get("properties");
+		for (String key : properties.keySet()) {
+			String value = properties.get(key);
+			if (value.startsWith("![")) {
+				String msg = "Data is already encrypted, decrypt it before using public key encrypt";
+				System.err.println(msg);
+				throw new Exception(msg);
+			}
+		}
+		/* End determining keyId */
+
+		/* Start determining cipherKey */
+		CpsEncryptor cpsEncryptor = new CpsEncryptor(publicKey);
+		cipherKey = cpsEncryptor.getCpsKey().getCipherKey();
+		/* End determining cipherKey */
+
+		String securePropertyList = properties.get("secure.properties");
+		if (securePropertyList == null || securePropertyList.isEmpty()) {
+			/* Nothing to do */
+			System.err.println("No properties listed in secure.properties");
+		} else {
+			String[] secureProperties = securePropertyList.split(",");
+			for (String key : secureProperties) {
+				String plainTextValue = properties.get(key.trim());
+				if (cpsEncryptor.isEncrypted(plainTextValue)) {
+					System.err.println(key.trim() + " is already encrypted.");
+				}
+			}
+
+			boolean propertiesChanged = false;
+			for (String key : secureProperties) {
+				String plainTextValue = properties.get(key.trim());
+				String value = cpsEncryptor.encrypt(plainTextValue);
+				properties.put(key, value);
+				propertiesChanged = true;
+			}
+			if (propertiesChanged) {
+				payload.put("cipherKey", cipherKey);
 				payload.put("properties", properties);
 			} else {
 				System.err.println("No properties encrypted");
