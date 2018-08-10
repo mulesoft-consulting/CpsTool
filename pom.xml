@@ -80,6 +80,12 @@
 			<version>2.5</version>
 		</dependency>
 
+		<dependency>
+			<groupId>commons-codec</groupId>
+			<artifactId>commons-codec</artifactId>
+			<version>1.9</version>
+		</dependency>
+
 		<!-- the core, which includes Streaming API, shared low-level abstractions 
 			(but NOT data-binding) -->
 		<dependency>

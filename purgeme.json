@@ -1,0 +1,20 @@
+{
+  "projectName" : "jda-skeleton-project",
+  "branchName" : "base",
+  "instanceId" : "base",
+  "envName" : "local",
+  "keyId" : "base",
+  "imports" : [ {
+    "projectName" : "jda-skeleton-project",
+    "branchName" : "base",
+    "instanceId" : "base",
+    "envName" : "base",
+    "keyId" : "base"
+  } ],
+  "properties" : {
+    "secure.properties" : "my.client-secret",
+    "property.path" : "jda-skeleton-project/base/base/local/base",
+    "my.client-id" : "xx",
+    "my.client-secret" : "xx"
+  }
+}

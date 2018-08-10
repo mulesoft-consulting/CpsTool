@@ -25,9 +25,22 @@ java -jar target/CpsTool.jar property-file myproject mybranch site01 local base 
 ## Required environment variables
 The encryption depends on keys stored in a keystore file. The keys are RSA key pairs where the keystore alias is the keyId. To point to the correct keystore, set these variables:
 
-mule_cps_keystore_filename=<path to keystore.jks file>
-mule_cps_keystore_password=<the keystore's password (defaults to "")>
-mule_cps_key_password=<the password for the keys (note that all the keys use the same password)>
-
+```
+  mule_cps_keystore_filename=path to keystore.jks file
+  mule_cps_keystore_password=the keystore's password (defaults to "")
+  mule_cps_key_password=the password for the keys (note that all the keys use the same password)
+```
 ## Dependency
 Note that the project cps-encryption contains the encryption library used by the tool.
+
+## Testing with cps-encryption' keystore
+If you setup the keystore environment variables with the keystore setup described in the cps-encryption project, you can test the encryption with the sample-cps-config.json file included in the project. Use the encrypt command:
+ ```
+ java -jar target/CpsTool.jar encrypt <sample-cps-config.json
+ ```
+ If the configuration property service is running, you can store the encrypted properties with this command:
+ 
+ ```
+ java -jar target/CpsTool.jar encrypt <sample-cps-config.json | curl -k -H "client_id:x" -H "client_secret:x" -H "edit_token:xx" -H "Content-Type:application/json" -X POST --data @-  http://localhost:9184/configuration-property-service/v1/config
+ ```
+ 
