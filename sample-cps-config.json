@@ -4,7 +4,15 @@
   "instanceId": "base",
   "keyId": "key1",
   "envName": "DEV",
-  "parents": [],
+  "parents": [
+    {
+      "projectName": "Shared",
+      "branchName": "base",
+      "instanceId": "base",
+      "keyId": "base",
+      "envName": "DEV"
+    }
+  ],
   "properties": {
     "secure.properties": "my.second.property,another.property,cipher.text.properties",
     "a.b.c": "myvalue",
