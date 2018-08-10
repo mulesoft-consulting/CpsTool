@@ -33,7 +33,7 @@ The encryption depends on keys stored in a keystore file. The keys are RSA key p
 ## Dependency
 Note that the project cps-encryption contains the encryption library used by the tool.
 
-## Testing with cps-encryption' keystore
+## Testing with cps-encryption's keystore
 If you setup the keystore environment variables with the keystore setup described in the cps-encryption project, you can test the encryption with the sample-cps-config.json file included in the project. Use the encrypt command:
  ```
  java -jar target/CpsTool.jar encrypt <sample-cps-config.json
@@ -43,4 +43,5 @@ If you setup the keystore environment variables with the keystore setup describe
  ```
  java -jar target/CpsTool.jar encrypt <sample-cps-config.json | curl -k -H "client_id:x" -H "client_secret:x" -H "edit_token:xx" -H "Content-Type:application/json" -X POST --data @-  http://localhost:9184/configuration-property-service/v1/config
  ```
+The url host and port will need to reflect your configuration.
  
