@@ -45,3 +45,8 @@ If you setup the keystore environment variables with the keystore setup describe
  ```
 The url host and port will need to reflect your configuration.
  
+## Building CpsTool
+
+```
+mvn clean install
+```

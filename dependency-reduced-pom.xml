@@ -4,7 +4,7 @@
   <groupId>com.mulesoft.java</groupId>
   <artifactId>CpsTool</artifactId>
   <name>Configuration Property Service Tool</name>
-  <version>1.1.0</version>
+  <version>1.2.0</version>
   <build>
     <finalName>CpsTool</finalName>
     <plugins>
@@ -42,6 +42,21 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>appassembler-maven-plugin</artifactId>
+        <version>1.10</version>
+        <configuration>
+          <configurationDirectory>conf</configurationDirectory>
+          <copyConfigurationDirectory>true</copyConfigurationDirectory>
+          <programs>
+            <program>
+              <mainClass>om.mulesoft.java.CpsTool</mainClass>
+              <id>CpsTool</id>
+            </program>
+          </programs>
+        </configuration>
       </plugin>
     </plugins>
   </build>

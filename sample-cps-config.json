@@ -1,10 +1,10 @@
 {
-  "projectName": "test-mule4-cps-connector",
+  "projectName": "CPS Tool Insert",
   "branchName": "base",
   "instanceId": "base",
   "keyId": "key1",
   "envName": "DEV",
-  "parents": [
+  "imports": [
     {
       "projectName": "Shared",
       "branchName": "base",

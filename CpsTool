@@ -1,0 +1,12 @@
+export mule_cps_keystore_filename=/usr/local/cps-keystore.jks
+export mule_cps_keystore_password=changeit
+export mule_cps_key_password=changeit
+export mule_cps_host=localhost
+export mule_cps_port=9085
+export mule_cps_path=/configuration-property-service/v1/config
+export mule_cps_client_id=x
+export mule_cps_client_secret=x
+export mule_cps_pass_credentials_as_headers=true
+export mule_cps_verbose_logging=false
+
+java -jar CpsTool.jar "$@"
