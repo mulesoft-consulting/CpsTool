@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.mulesoft.java</groupId>
 	<artifactId>CpsTool</artifactId>
-	<version>1.1.0</version>
+	<version>1.2.0</version>
 	<name>Configuration Property Service Tool</name>
 	<properties>
 		<jdk.version>1.8</jdk.version>
@@ -13,6 +13,7 @@
 	</properties>
 
 	<build>
+		<finalName>CpsTool</finalName>
 		<plugins>
 			<!-- download source code in Eclipse, best practice -->
 			<plugin>
@@ -61,6 +62,21 @@
 				</executions>
 			</plugin>
 
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>appassembler-maven-plugin</artifactId>
+                <version>1.10</version>
+                <configuration>
+                    <configurationDirectory>conf</configurationDirectory>
+                    <copyConfigurationDirectory>true</copyConfigurationDirectory>
+                    <programs>
+                        <program>
+                            <mainClass>om.mulesoft.java.CpsTool</mainClass>
+                            <id>CpsTool</id>
+                        </program>
+                    </programs>
+                </configuration>
+            </plugin>
 		</plugins>
 	</build>
 
@@ -77,6 +93,12 @@
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
 			<version>2.5</version>
+		</dependency>
+
+		<dependency>
+			<groupId>commons-codec</groupId>
+			<artifactId>commons-codec</artifactId>
+			<version>1.9</version>
 		</dependency>
 
 		<!-- the core, which includes Streaming API, shared low-level abstractions 
@@ -108,7 +130,18 @@
 			<artifactId>commons-logging</artifactId>
 			<version>1.2</version>
 		</dependency>
-
+		
+		<dependency>
+		  <groupId>org.apache.httpcomponents</groupId>
+		  <artifactId>httpclient</artifactId>
+		  <version>4.5.6</version>
+		</dependency>
+		
+		<dependency>
+		  <groupId>org.apache.httpcomponents</groupId>
+		  <artifactId>fluent-hc</artifactId>
+		  <version>4.5.6</version>
+		</dependency>
 		<!-- Mule core is used for IOUtils -->
 		<!-- https://mvnrepository.com/artifact/org.mule/mule-core -->
 		<dependency>
@@ -119,9 +152,10 @@
 
 		<dependency>
 			<groupId>org.mule.consulting</groupId>
-			<artifactId>cps-encryption</artifactId>
-			<version>1.0.0</version>
+			<artifactId>mule4-cps-encryption</artifactId>
+			<version>1.1.1</version>
 		</dependency>
+
 	</dependencies>
 
 </project>

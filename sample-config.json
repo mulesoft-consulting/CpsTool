@@ -1,0 +1,23 @@
+{
+  "projectName": "test-mule4-cps-connector",
+  "branchName": "base",
+  "instanceId": "base",
+  "keyId": "key1",
+  "envName": "DEV",
+  "imports": [
+    {
+      "projectName": "Shared",
+      "branchName": "base",
+      "instanceId": "base",
+      "keyId": "base",
+      "envName": "DEV"
+    }
+  ],
+  "properties": {
+    "secure.properties": "cipher.text.properties,another.property",
+    "a.b.c": "myvalue",
+    "my.second.property": "test-mule4-cps-connector base base DEV key1",
+    "another.property": "Third value, why not?",
+    "cipher.text.properties": "base64 encoded cipher text"
+  }
+}
