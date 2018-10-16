@@ -8,5 +8,6 @@ export mule_cps_client_id=x
 export mule_cps_client_secret=x
 export mule_cps_pass_credentials_as_headers=true
 export mule_cps_verbose_logging=false
+export CPSTOOL_HOME=/Applications/CpsTool
 
-java -jar CpsTool.jar "$@"
+java -jar $CPSTOOL_HOME/CpsTool.jar "$@"
