@@ -8,6 +8,6 @@ set mule_cps_client_id=x
 set mule_cps_client_secret=x
 set mule_cps_pass_credentials_as_headers=true
 set mule_cps_verbose_logging=false
-set CPSTOOL_HOME=C:/CpsTool
+set CPSTOOL_HOME=C:\CpsTool
 
-java -jar %CPSTOOL_HOME%/CpsTool.jar %*
+java -jar %CPSTOOL_HOME%\CpsTool.jar %*

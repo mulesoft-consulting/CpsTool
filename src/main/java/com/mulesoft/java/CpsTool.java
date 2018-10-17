@@ -60,7 +60,7 @@ public class CpsTool {
 				String data = IOUtils.toString(System.in, "UTF8");
 				String json = encrypt(argKeyId, data);
 				System.out.println(json);
-			} else if (args[0].equals("public-encrypt")) {
+			} else if (args[0].equals("encrypt-with-pem")) {
 				String argKeyId = (args.length > 1) ? args[1] : null;
 				if (argKeyId == null) {
 					String msg = "Need a keyId to be specified, cannot continue with encrypt";
@@ -158,7 +158,7 @@ public class CpsTool {
 				? osEnvVars.get("mule_cps_pass_credentials_as_headers") : System.getProperty("mule_cps_pass_credentials_as_headers", "");
 		
 		if(StringUtils.equalsIgnoreCase(verboseLogger, "true")) {
-			System.out.println("Using mule cps hosted on= " + cps_host);
+			System.err.println("Using mule cps hosted on= " + cps_host);
 		}
 		if (cps_host.equals("")) {
 			logger.warn("mule_cps_host is not specified");
@@ -221,49 +221,49 @@ public class CpsTool {
 		String instanceId = (args.length > 3) ? args[3] : null;
 		String envName = (args.length > 4) ? args[4] : null;
 		String keyId = (args.length > 5) ? args[5] : null;
-		String editToken = (args.length > 6) ? args[6] : null;
+		String editToken = (args.length > 6) ? args[6] : "99";
 		StringBuilder resources = new StringBuilder();
 		resources.append("/");
 		
 		if(StringUtils.isBlank(projectName)) {
-			System.out.println("Please enter project name");
+			System.err.println("Please enter project name");
 			resources.append(userInput.nextLine() + "/");
 		} else {
 			resources.append(projectName + "/");
 		}
 		
 		if(StringUtils.isBlank(branchName)) {
-			System.out.println("Please enter branch name");
+			System.err.println("Please enter branch name");
 			resources.append(userInput.nextLine() + "/");
 		} else {
 			resources.append(branchName + "/");
 		}
 		
 		if(StringUtils.isBlank(instanceId)) {
-			System.out.println("Please enter instance id");
+			System.err.println("Please enter instance id");
 			resources.append(userInput.nextLine() + "/");
 		} else {
 			resources.append(instanceId + "/");
 		}
 		
 		if(StringUtils.isBlank(envName)) {
-			System.out.println("Please enter environment name");
+			System.err.println("Please enter environment name");
 			resources.append(userInput.nextLine() + "/");
 		} else {
 			resources.append(envName + "/");
 		}
 		
 		if(StringUtils.isBlank(keyId)) {
-			System.out.println("Please enter key id");
+			System.err.println("Please enter key id");
 			resources.append(userInput.nextLine());
 		} else {
 			resources.append(keyId);
 		}
 		/*Ask for totp security token*/
-		if(StringUtils.isBlank(editToken)) {
-			System.out.println("Please enter the edit token");
-			editToken = userInput.nextLine();
-		}
+//		if(StringUtils.isBlank(editToken)) {
+//			System.err.println("Please enter the edit token");
+//			editToken = userInput.nextLine();
+//		}
 		userInput.close();
 		
 		/*Call CPS Service*/
@@ -302,7 +302,7 @@ public class CpsTool {
 		}
 		if(httpclient != null && httpGet != null) {
 			if(StringUtils.equalsIgnoreCase(verboseLogger, "true")) {
-				System.out.println("*********Calling the CPS Service URL********* -> " + httpGet.getURI());
+				System.err.println("*********Calling the CPS Service URL********* -> " + httpGet.getURI());
 			}
 			try {
 				CloseableHttpResponse response = httpclient.execute(httpGet);
@@ -310,7 +310,7 @@ public class CpsTool {
 				if (response.getStatusLine().getStatusCode() == 200) {
 					String content = EntityUtils.toString(responseEntity);
 					if(StringUtils.equalsIgnoreCase(verboseLogger, "true")) {
-						System.out.println("*********Decrypting the properties*********");
+						System.err.println("*********Decrypting the properties*********");
 					}
 					String json = decrypt(content);
 					System.out.println(json);
@@ -362,7 +362,7 @@ public class CpsTool {
 		/*Input JSON*/
 		json = configFile.toString();
 		if(StringUtils.isBlank(editToken)) {
-			System.out.println("Please enter the edit token");
+			System.err.println("Please enter the edit token");
 			userInput = new Scanner(System.in);
 			editToken = userInput.nextLine();
 			userInput.close();		
@@ -388,19 +388,19 @@ public class CpsTool {
 				}
 			}
 			if(StringUtils.equalsIgnoreCase(verboseLogger, "true")) {
-				System.out.println("*********Input JSON*********" + json);
+				System.err.println("*********Input JSON*********" + json);
 			}
 			/* Generate request body and set it in the request*/
 			StringEntity configJsonEntity = new StringEntity(json);
 			httpPost.setEntity(configJsonEntity);
 			
 			if(StringUtils.equalsIgnoreCase(verboseLogger, "true")) {
-				System.out.println("*********Calling the CPS Service URL********** -> " + httpPost.getURI());
+				System.err.println("*********Calling the CPS Service URL********** -> " + httpPost.getURI());
 			}
 			try {
 				CloseableHttpResponse response = httpclient.execute(httpPost);
 				if (response.getStatusLine().getStatusCode() == 200) {
-					System.out.println("*********Update Successful. Please check /navigate resource of CPS Service*********");
+					System.err.println("*********Update Successful. Please check /navigate resource of CPS Service*********");
 				} else {
 					HttpEntity responseEntity = response.getEntity();
 					String content = EntityUtils.toString(responseEntity);
@@ -665,25 +665,74 @@ public class CpsTool {
 	}
 
 	private static void printHelp() {
-		System.out.println("\nUsage: java -jar CpsTool {operation} [parameters]\n");
-		System.out.println("  operations:");
-		System.out.println("    decrypt           Read stdin and decrypt to stdout");
-		System.out.println("    public-encrypt    Read stdin and encrypt to stdout using <keyId>.pem file containing the public key");
-		System.out.println("      parameters:");
-		System.out.println(
+		System.err.println("\nUsage: java -jar CpsTool {operation} [parameters]\n");
+		System.err.println("  operations:");
+		
+		
+		System.err.println("    decrypt           Read stdin and decrypt to stdout");
+		
+		
+		System.err.println("\n    encrypt-with-pem  Read stdin and encrypt to stdout using <keyId>.pem file containing the public key");
+		System.err.println("      parameters:");
+		System.err.println(
 				"        keyId         The keyId to use for encrypting the data and for providing the name of the pem file.");
-		System.out.println("    encrypt           Read stdin and encrypt to stdout using configured keystore");
-		System.out.println("      parameters:");
-		System.out.println(
+		
+		
+		System.err.println("\n    encrypt           Read stdin and encrypt to stdout using configured keystore");
+		System.err.println("      parameters:");
+		System.err.println(
 				"        keyId         The keyId to use for encrypting data, will be ignored if the file contains encrypted data");
-		System.out.println("    re-encrypt         Read stdin and re-encrypt with new key to stdout");
-		System.out.println("      parameters:");
-		System.out.println("        keyId         The keyId to use for new encryption (required)");
-		System.out.println("    pretty            Read stdin and send a pretty version to stdout");
-		System.out.println("    property-file     Read a property file from stdin and print config to stdout");
-		System.out.println("    push-file     Read a config json provided in the arguments and post it to CPS service");
-		System.out.println("    push-file-encrypt     Read a config json provided in the arguments, encrypt and post it to CPS service");
-		System.out.println("    pull decrypt    Retrieve and decrypt a config json file from the CPS service");
-		System.out.println("\n");
+		
+		
+		System.err.println("\n    re-encrypt         Read stdin and re-encrypt with new key to stdout");
+		System.err.println("      parameters:");
+		System.err.println("        keyId         The keyId to use for new encryption (required)");
+		
+		
+		System.err.println("\n    pretty            Read stdin and send a pretty version to stdout");
+		
+		System.err.println("\n    property-file     Read a property file from stdin and print config to stdout");
+		System.err.println("      parameters:");
+		System.err.println(
+				"        projectName   The project name for the config coordinate key.");
+		System.err.println(
+				"        branchName    The branch name for the config coordinate key.");
+		System.err.println(
+				"        instanceId    The instance id for the config coordinate key.");
+		System.err.println(
+				"        envName       The deployment environment name for the config coordinate key.");
+		System.err.println(
+				"        keyId         The encryption keyId for the config coordinate key.");
+		
+		
+		System.err.println("\n    push-file         Read a config json provided in the arguments and post it to CPS service");
+		System.err.println("      parameters:");
+		System.err.println(
+				"        fileName   The file containing the config to push.");
+		System.err.println(
+				"        edit_token    The two-factor token from the authenticator device.");
+		
+		
+		System.err.println("\n    push-file-encrypt Read a config json provided in the arguments, encrypt and post it to CPS service");
+		System.err.println("      parameters:");
+		System.err.println(
+				"        fileName   The file containing the config to push.");
+		System.err.println(
+				"        edit_token    The two-factor token from the authenticator device.");
+		
+		
+		System.err.println("\n    pull-decrypt      Retrieve and decrypt a config json file from the CPS service");
+		System.err.println("      parameters:");
+		System.err.println(
+				"        projectName   The project name for the config coordinate key.");
+		System.err.println(
+				"        branchName    The branch name for the config coordinate key.");
+		System.err.println(
+				"        instanceId    The instance id for the config coordinate key.");
+		System.err.println(
+				"        envName       The deployment environment name for the config coordinate key.");
+		System.err.println(
+				"        keyId         The encryption keyId for the config coordinate key.");
+		System.err.println("\n");
 	}
 }
