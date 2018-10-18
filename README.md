@@ -2,7 +2,7 @@
 Encryption tool for configuration property service. This is a java command line tool to see help, run the command:
 
 ```
-java -jar target/CpsTool-1.1.0.jar
+java -jar target/CpsTool.jar
 ```
 
 Some examples of using the tool from a bash shell are:
