@@ -41,9 +41,11 @@ public class CpsTool {
 	private static Logger logger = LoggerFactory.getLogger(CpsTool.class);
 	private static String verboseLogger = (StringUtils.isNotBlank(System.getenv("mule_cps_verbose_logging"))) 
 											? (System.getenv("mule_cps_verbose_logging")) : "";
+	private static String generate_token = (StringUtils.isNotBlank(System.getenv("mule_cps_generate_token"))) 
+											? (System.getenv("mule_cps_generate_token")) : "";
 	
 	public static void main(String[] args) {
-		System.err.println("CpsTool version 1.2\n");
+		System.err.println("CpsTool version 1.3\n");
 		try {
 			if (args.length <= 0) {
 				printHelp();
@@ -362,10 +364,21 @@ public class CpsTool {
 		/*Input JSON*/
 		json = configFile.toString();
 		if(StringUtils.isBlank(editToken)) {
-			System.err.println("Please enter the edit token");
-			userInput = new Scanner(System.in);
-			editToken = userInput.nextLine();
-			userInput.close();		
+			if (StringUtils.equalsIgnoreCase(generate_token, "true")) {
+				System.err.println("Please enter the CPS password");				
+				userInput = new Scanner(System.in);
+				try {
+					editToken = TOTP.twoFactorToken(userInput.nextLine());
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				userInput.close();		
+			} else {
+				System.err.println("Please enter the CPS two-factor edit_token");
+				userInput = new Scanner(System.in);
+				editToken = userInput.nextLine();
+				userInput.close();		
+			}
 		}
 		/* Initialize HttpPost Call*/
 		CloseableHttpClient httpclient = null;
