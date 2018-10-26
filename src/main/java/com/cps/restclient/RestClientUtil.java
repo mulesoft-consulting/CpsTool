@@ -11,6 +11,7 @@ import java.util.Properties;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
@@ -53,12 +54,12 @@ public class RestClientUtil {
 	 * @return
 	 * @throws Exception
 	 */
-	public static HttpGet getHttpGetClient(StringBuilder uriParams, String token, Properties config) throws Exception {
+	public static HttpGet getHttpGetClient(StringBuilder uriParams, String token, Properties config, boolean use_config) throws Exception {
 
 		HttpGet httpGet = null;
 		if(config != null && !config.isEmpty()) {
 			/* Build URL */
-			URI cpsServiceURL = getURI(uriParams, config);
+			URI cpsServiceURL = (use_config)?getConfigURI(uriParams, config):getArchiveURI(null, config);
 			
 			httpGet= new HttpGet(cpsServiceURL);
 			/* Set Headers*/
@@ -72,6 +73,33 @@ public class RestClientUtil {
 			httpGet.addHeader("edit_token", token);
 		}
 		return httpGet;
+	}
+
+	/**
+	 * @param uriParams
+	 * @param token
+	 * @return
+	 * @throws Exception
+	 */
+	public static HttpDelete getHttpDeleteClient(StringBuilder uriParams, String token, Properties config, boolean use_config) throws Exception {
+
+		HttpDelete httpDelete = null;
+		if(config != null && !config.isEmpty()) {
+			/* Build URL */
+			URI cpsServiceURL = (use_config)?getConfigURI(uriParams, config):getArchiveURI(null, config);
+			
+			httpDelete= new HttpDelete(cpsServiceURL);
+			/* Set Headers*/
+			if(StringUtils.equalsIgnoreCase(config.getProperty("cps_pass_credentials_as_headers"), "false")) {
+				httpDelete.addHeader("Authorization", getAuthHeader(config).toString());
+			} else {
+				httpDelete.addHeader("client_id", config.getProperty("cps_client_id"));
+				httpDelete.addHeader("client_secret", config.getProperty("cps_client_secret"));
+			}
+			httpDelete.addHeader("Content-Type", "application/json");
+			httpDelete.addHeader("edit_token", token);
+		}
+		return httpDelete;
 	}
 
 	/**
@@ -95,7 +123,30 @@ public class RestClientUtil {
 	 * @return
 	 * @throws URISyntaxException
 	 */
-	private static URI getURI(StringBuilder uriParams, Properties config) throws URISyntaxException {
+	private static URI getArchiveURI(StringBuilder uriParams, Properties config) throws URISyntaxException {
+		URIBuilder builder = new URIBuilder();
+		builder.setScheme("https");
+		builder.setHost(config.getProperty("cps_host"));
+		builder.setPort(Integer.parseInt(config.getProperty("cps_port")));
+		String cps_config_path = config.getProperty("cps_path");
+		String cps_archive_path = cps_config_path.substring(0, cps_config_path.length() - 6) + "archive";
+		
+		if(uriParams != null && StringUtils.isNotBlank(uriParams.toString())) {
+			builder.setPath(cps_archive_path+uriParams.toString());
+		} else {
+			builder.setPath(cps_archive_path);
+		}
+		URI cpsServiceURL = builder.build();
+		return cpsServiceURL;
+	}
+
+	/**
+	 * @param uriParams
+	 * @param config
+	 * @return
+	 * @throws URISyntaxException
+	 */
+	private static URI getConfigURI(StringBuilder uriParams, Properties config) throws URISyntaxException {
 		URIBuilder builder = new URIBuilder();
 		builder.setScheme("https");
 		builder.setHost(config.getProperty("cps_host"));
@@ -114,12 +165,12 @@ public class RestClientUtil {
 	 * @return
 	 * @throws Exception
 	 */
-	public static HttpPost getHttpPostClient(String token, Properties config) throws Exception {
+	public static HttpPost getHttpPostClient(String token, Properties config, boolean use_config) throws Exception {
 		/*Get Properties*/
 		HttpPost httpPost = null;
 		if(config != null && !config.isEmpty()) {
 			/* Build URL */
-			URI cpsServiceURL = getURI(null, config);
+			URI cpsServiceURL = (use_config)?getConfigURI(null, config):getArchiveURI(null, config);
 			httpPost = new HttpPost(cpsServiceURL);
 			/* Set Headers*/
 			if(StringUtils.equalsIgnoreCase(config.getProperty("cps_pass_credentials_as_headers"), "false")) {

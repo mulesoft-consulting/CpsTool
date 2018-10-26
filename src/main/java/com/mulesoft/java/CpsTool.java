@@ -17,6 +17,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -45,7 +46,7 @@ public class CpsTool {
 											? (System.getenv("mule_cps_generate_token")) : "";
 	
 	public static void main(String[] args) {
-		System.err.println("CpsTool version 1.3\n");
+		System.err.println("CpsTool version 1.3.1\n");
 		try {
 			if (args.length <= 0) {
 				printHelp();
@@ -123,6 +124,25 @@ public class CpsTool {
 			} else if(args[0].equals("pull-decrypt")) {
 				Properties config = getConfigProperties();
 				pullAndDecryptConfig(args, config);
+			} else if(args[0].equals("delete")) {
+				Properties config = getConfigProperties();
+				deleteConfig(args, config);
+			} else if(args[0].equals("pull-archive")) {
+				Properties config = getConfigProperties();
+				getArchive(args, config);
+			} else if (args[0].equals("push-archive-file")) { 
+				String editToken = (args.length > 2) ? args[2] : null;
+				String fileName = (args.length > 1) ? args[1] : null;
+				String argKeyId = (args.length > 3) ? args[3] : null;
+				/* Check if fileName is provided*/
+				if (fileName == null) {
+					String msg = "Need a archive json file to push to the CPS service";
+					System.err.println(msg);
+					throw new Exception(msg);
+				}
+				Properties config = getConfigProperties();
+				/* Read file and call service*/
+				pushArchiveToCPSService(fileName, config, editToken);
 			} else {
 				printHelp();
 			}
@@ -271,11 +291,134 @@ public class CpsTool {
 		/*Call CPS Service*/
 		if(StringUtils.isNotBlank(resources.toString())) {
 			try {
-				callCpsGetConfigService(resources,editToken, config);
+				callCpsGetConfigService(resources, editToken, config);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+		}
+		
+	}
+
+	/**
+	 * This method will check all arguments for input, if not provided
+	 * user will be prompted for required input.
+	 * CPS DELETE/config service will be called to get the required config
+	 * @param args
+	 */
+	private static void deleteConfig(String[] args, Properties config) {
+		
+		/*Initiate Scanner and Check all Inputs*/
+		Scanner userInput = new Scanner(System.in);
+		String projectName = (args.length > 1) ? args[1] : null;
+		String branchName = (args.length > 2) ? args[2] : null;
+		String instanceId = (args.length > 3) ? args[3] : null;
+		String envName = (args.length > 4) ? args[4] : null;
+		String keyId = (args.length > 5) ? args[5] : null;
+		String editToken = (args.length > 6) ? args[6] : "99";
+		StringBuilder resources = new StringBuilder();
+		resources.append("/");
+		
+		if(StringUtils.isBlank(projectName)) {
+			System.err.println("Please enter project name");
+			resources.append(userInput.nextLine() + "/");
+		} else {
+			resources.append(projectName + "/");
+		}
+		
+		if(StringUtils.isBlank(branchName)) {
+			System.err.println("Please enter branch name");
+			resources.append(userInput.nextLine() + "/");
+		} else {
+			resources.append(branchName + "/");
+		}
+		
+		if(StringUtils.isBlank(instanceId)) {
+			System.err.println("Please enter instance id");
+			resources.append(userInput.nextLine() + "/");
+		} else {
+			resources.append(instanceId + "/");
+		}
+		
+		if(StringUtils.isBlank(envName)) {
+			System.err.println("Please enter environment name");
+			resources.append(userInput.nextLine() + "/");
+		} else {
+			resources.append(envName + "/");
+		}
+		
+		if(StringUtils.isBlank(keyId)) {
+			System.err.println("Please enter key id");
+			resources.append(userInput.nextLine());
+		} else {
+			resources.append(keyId);
+		}
+		/*Ask for totp security token*/
+		if (StringUtils.equalsIgnoreCase(generate_token, "true")) {
+			System.err.println("Please enter the CPS password to DELETE config");				
+			userInput = new Scanner(System.in);
+			try {
+				editToken = TOTP.twoFactorToken(userInput.nextLine());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			userInput.close();		
+		} else {
+			System.err.println("Please enter the CPS two-factor edit_token to DELETE config");
+			userInput = new Scanner(System.in);
+			editToken = userInput.nextLine();
+			userInput.close();		
+		}
+				
+		/*Call CPS Service*/
+		if(StringUtils.isNotBlank(resources.toString())) {
+			try {
+				callCpsDeleteConfigService(resources, editToken, config);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+	}
+
+	/**
+	 * This method will check all arguments for input, if not provided
+	 * user will be prompted for required input.
+	 * CPS GET/archive service will be called to get the required config
+	 * @param args
+	 */
+	private static void getArchive(String[] args, Properties config) {
+		
+		/*Initiate Scanner and Check all Inputs*/
+		Scanner userInput = new Scanner(System.in);
+		String editToken = (args.length > 6) ? args[6] : "99";
+		StringBuilder resources = new StringBuilder();
+		resources.append("/");
+		
+		/*Ask for totp security token*/
+		if (StringUtils.equalsIgnoreCase(generate_token, "true")) {
+			System.err.println("Please enter the CPS password");				
+			userInput = new Scanner(System.in);
+			try {
+				editToken = TOTP.twoFactorToken(userInput.nextLine());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			userInput.close();		
+		} else {
+			System.err.println("Please enter the CPS two-factor edit_token");
+			userInput = new Scanner(System.in);
+			editToken = userInput.nextLine();
+			userInput.close();		
+		}
+		
+		/*Call CPS Service*/
+		try {
+			callCpsGetArchiveService(resources, editToken, config);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		
 	}
@@ -297,7 +440,7 @@ public class CpsTool {
 		HttpGet httpGet = null;
 		try {
 			httpclient = RestClientUtil.getClient();
-			httpGet = RestClientUtil.getHttpGetClient(uriParams, token, config);
+			httpGet = RestClientUtil.getHttpGetClient(uriParams, token, config, true);
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -316,6 +459,52 @@ public class CpsTool {
 					}
 					String json = decrypt(content);
 					System.out.println(json);
+				} else {
+					String content = EntityUtils.toString(responseEntity);
+			        throw new Exception(content);
+				}
+				
+			} catch (Exception e) {
+				System.err.println(e.getMessage());
+			} finally {
+				httpclient.close();	
+			}
+		}
+		
+	}
+
+	/**
+	 * This method will call the CPS DELETE/config service to retrieve
+	 * and decrypt the required config file.
+	 *  
+	 * @param config
+	 * @param uriParams
+	 * @param token
+	 * @throws URISyntaxException
+	 * @throws IOException
+	 */
+	private static void callCpsDeleteConfigService(StringBuilder uriParams, String token, Properties config) throws URISyntaxException, IOException {
+
+		/* Initialize HttpGet Call*/
+		CloseableHttpClient httpclient = null;
+		HttpDelete httpDelete = null;
+		try {
+			httpclient = RestClientUtil.getClient();
+			httpDelete = RestClientUtil.getHttpDeleteClient(uriParams, token, config, true);
+		} catch (Exception e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		if(httpclient != null && httpDelete != null) {
+			if(StringUtils.equalsIgnoreCase(verboseLogger, "true")) {
+				System.err.println("*********Calling the CPS Service URL********* -> " + httpDelete.getURI());
+			}
+			try {
+				CloseableHttpResponse response = httpclient.execute(httpDelete);
+				HttpEntity responseEntity = response.getEntity();
+				if (response.getStatusLine().getStatusCode() == 200) {
+					String content = EntityUtils.toString(responseEntity);
+					System.out.println(content);
 				} else {
 					String content = EntityUtils.toString(responseEntity);
 			        throw new Exception(content);
@@ -385,7 +574,7 @@ public class CpsTool {
 		HttpPost httpPost = null;
 		try {
 			httpclient = RestClientUtil.getClient();
-			httpPost = RestClientUtil.getHttpPostClient(editToken,config);
+			httpPost = RestClientUtil.getHttpPostClient(editToken, config, true);
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -403,6 +592,135 @@ public class CpsTool {
 			if(StringUtils.equalsIgnoreCase(verboseLogger, "true")) {
 				System.err.println("*********Input JSON*********" + json);
 			}
+			/* Generate request body and set it in the request*/
+			StringEntity configJsonEntity = new StringEntity(json);
+			httpPost.setEntity(configJsonEntity);
+			
+			if(StringUtils.equalsIgnoreCase(verboseLogger, "true")) {
+				System.err.println("*********Calling the CPS Service URL********** -> " + httpPost.getURI());
+			}
+			try {
+				CloseableHttpResponse response = httpclient.execute(httpPost);
+				if (response.getStatusLine().getStatusCode() == 200) {
+					System.err.println("*********Update Successful. Please check /navigate resource of CPS Service*********");
+				} else {
+					HttpEntity responseEntity = response.getEntity();
+					String content = EntityUtils.toString(responseEntity);
+			        System.err.println(content);
+				}
+				
+			} catch (Exception e) {
+				System.err.println(e.getMessage());
+			} finally {
+				httpclient.close();	
+			}
+		}
+	}
+
+	/**
+	 * This method will call the CPS GET/archive service to retrieve
+	 *  
+	 * @param config
+	 * @param uriParams
+	 * @param token
+	 * @throws URISyntaxException
+	 * @throws IOException
+	 */
+	private static void callCpsGetArchiveService(StringBuilder uriParams, String token, Properties config) throws URISyntaxException, IOException {
+
+		/* Initialize HttpGet Call*/
+		CloseableHttpClient httpclient = null;
+		HttpGet httpGet = null;
+		try {
+			httpclient = RestClientUtil.getClient();
+			httpGet = RestClientUtil.getHttpGetClient(uriParams, token, config, false);
+		} catch (Exception e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		if(httpclient != null && httpGet != null) {
+			if(StringUtils.equalsIgnoreCase(verboseLogger, "true")) {
+				System.err.println("*********Calling the CPS Service URL********* -> " + httpGet.getURI());
+			}
+			try {
+				CloseableHttpResponse response = httpclient.execute(httpGet);
+				HttpEntity responseEntity = response.getEntity();
+				if (response.getStatusLine().getStatusCode() == 200) {
+					String content = EntityUtils.toString(responseEntity);
+					System.out.println(content);
+				} else {
+					String content = EntityUtils.toString(responseEntity);
+			        throw new Exception(content);
+				}
+				
+			} catch (Exception e) {
+				System.err.println(e.getMessage());
+			} finally {
+				httpclient.close();	
+			}
+		}
+		
+	}
+
+	/**
+	 * This method will post the archive file to the CPS service.
+
+	 * 
+	 * @param fileName
+	 * @param argKeyId
+	 * @param config
+	 * @throws URISyntaxException
+	 * @throws UnsupportedEncodingException
+	 * @throws IOException
+	 */
+	private static void pushArchiveToCPSService(String fileName, Properties config, String editToken)
+			throws URISyntaxException, UnsupportedEncodingException, IOException {
+		File file = new File (fileName);
+		Scanner userInput = null;
+		String json = StringUtils.EMPTY;
+		StringBuilder archiveFile = new StringBuilder();
+		try {
+			userInput = new Scanner(file);
+			while (userInput.hasNextLine()) {
+				archiveFile.append(userInput.nextLine());
+				archiveFile.append("\n");
+			}
+		} catch (Exception e) {
+			System.err.println(e.getMessage());
+		} finally {
+			userInput.close();
+		}
+		
+		/*Input JSON*/
+		json = archiveFile.toString();
+		if(StringUtils.isBlank(editToken)) {
+			if (StringUtils.equalsIgnoreCase(generate_token, "true")) {
+				System.err.println("Please enter the CPS password");				
+				userInput = new Scanner(System.in);
+				try {
+					editToken = TOTP.twoFactorToken(userInput.nextLine());
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				userInput.close();		
+			} else {
+				System.err.println("Please enter the CPS two-factor edit_token");
+				userInput = new Scanner(System.in);
+				editToken = userInput.nextLine();
+				userInput.close();		
+			}
+		}
+		/* Initialize HttpPost Call*/
+		CloseableHttpClient httpclient = null;
+		HttpPost httpPost = null;
+		try {
+			httpclient = RestClientUtil.getClient();
+			httpPost = RestClientUtil.getHttpPostClient(editToken, config, false);
+		} catch (Exception e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		if(httpclient != null && httpPost != null) {
 			/* Generate request body and set it in the request*/
 			StringEntity configJsonEntity = new StringEntity(json);
 			httpPost.setEntity(configJsonEntity);
@@ -723,7 +1041,7 @@ public class CpsTool {
 		System.err.println(
 				"        fileName   The file containing the config to push.");
 		System.err.println(
-				"        edit_token    The two-factor token from the authenticator device.");
+				"        edit_token    The two-factor token from the authenticator device or password.");
 		
 		
 		System.err.println("\n    push-file-encrypt Read a config json provided in the arguments, encrypt and post it to CPS service");
@@ -731,7 +1049,7 @@ public class CpsTool {
 		System.err.println(
 				"        fileName   The file containing the config to push.");
 		System.err.println(
-				"        edit_token    The two-factor token from the authenticator device.");
+				"        edit_token    The two-factor token from the authenticator device or a password.");
 		
 		
 		System.err.println("\n    pull-decrypt      Retrieve and decrypt a config json file from the CPS service");
@@ -746,6 +1064,36 @@ public class CpsTool {
 				"        envName       The deployment environment name for the config coordinate key.");
 		System.err.println(
 				"        keyId         The encryption keyId for the config coordinate key.");
+		
+		
+		System.err.println("\n    delete      Delete a config json file from the CPS service");
+		System.err.println("      parameters:");
+		System.err.println(
+				"        projectName   The project name for the config coordinate key.");
+		System.err.println(
+				"        branchName    The branch name for the config coordinate key.");
+		System.err.println(
+				"        instanceId    The instance id for the config coordinate key.");
+		System.err.println(
+				"        envName       The deployment environment name for the config coordinate key.");
+		System.err.println(
+				"        keyId         The encryption keyId for the config coordinate key.");
+		System.err.println(
+				"        edit_token    The two-factor token from the authenticator device or a password.");
+		
+		
+		System.err.println("\n    pull-archive         Get archive of all configs in the CPS service");
+		System.err.println("      parameters:");
+		System.err.println(
+				"        edit_token    The two-factor token from the authenticator device or password.");
+		
+		
+		System.err.println("\n    push-archive-file         Post archive configs in the file to CPS service");
+		System.err.println("      parameters:");
+		System.err.println(
+				"        fileName   The archive file containing the configs to push.");
+		System.err.println(
+				"        edit_token    The two-factor token from the authenticator device or password.");
 		System.err.println("\n");
 	}
 }
