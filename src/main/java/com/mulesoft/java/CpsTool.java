@@ -46,7 +46,7 @@ public class CpsTool {
 											? (System.getenv("mule_cps_generate_token")) : "";
 	
 	public static void main(String[] args) {
-		System.err.println("CpsTool version 1.3.1\n");
+		System.err.println("CpsTool version 1.3.2\n");
 		try {
 			if (args.length <= 0) {
 				printHelp();
