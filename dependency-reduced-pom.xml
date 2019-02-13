@@ -4,7 +4,7 @@
   <groupId>com.mulesoft.java</groupId>
   <artifactId>CpsTool</artifactId>
   <name>Configuration Property Service Tool</name>
-  <version>1.3.2</version>
+  <version>1.3.3</version>
   <build>
     <finalName>CpsTool</finalName>
     <plugins>

@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -23,12 +24,10 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.mule.consulting.cps.encryption.CpsEncryptor;
 import org.mule.consulting.cps.encryption.KeyStoreHelper;
-
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.cps.restclient.RestClientUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -46,7 +45,7 @@ public class CpsTool {
 											? (System.getenv("mule_cps_generate_token")) : "";
 	
 	public static void main(String[] args) {
-		System.err.println("CpsTool version 1.3.2\n");
+		System.err.println("CpsTool version 1.3.3\n");
 		try {
 			if (args.length <= 0) {
 				printHelp();
@@ -56,7 +55,7 @@ public class CpsTool {
 				System.out.println(json);
 			} else if (args[0].equals("decrypt")) {
 				String data = IOUtils.toString(System.in, "UTF8");
-				String json = decrypt(data);
+				String json = decrypt(data, false);
 				System.out.println(json);
 			} else if (args[0].equals("encrypt")) {
 				String argKeyId = (args.length > 1) ? args[1] : null;
@@ -85,7 +84,7 @@ public class CpsTool {
 			} else if (args[0].equals("re-encrypt")) {
 				String argKeyId = (args.length > 1) ? args[1] : null;
 				String data = IOUtils.toString(System.in, "UTF8");
-				String jsonData = decrypt(data);
+				String jsonData = decrypt(data, false);
 				String json = encrypt(argKeyId, jsonData);
 				System.out.println(json);
 			} else if (args[0].equals("property-file")) {
@@ -107,11 +106,11 @@ public class CpsTool {
 				}
 				Properties config = getConfigProperties();
 				/* Read file and call service*/
-				pushConfigToCPSService(fileName, false, argKeyId, config, editToken);
+				pushConfigToCPSService(fileName, false, argKeyId, config, editToken, false);
 			} else if (args[0].equals("push-file-encrypt")) { 
-				String editToken = (args.length > 2) ? args[2] : null;
+				String editToken = (args.length > 3) ? args[3] : null;
 				String fileName = (args.length > 1) ? args[1] : null;
-				String argKeyId = (args.length > 3) ? args[3] : null;
+				String argKeyId = (args.length > 2) ? args[2] : null;
 				/* Check if fileName is provided*/
 				if (fileName == null) {
 					String msg = "Need a config json file to push to the CPS service";
@@ -120,10 +119,31 @@ public class CpsTool {
 				}
 				Properties config = getConfigProperties();
 				/* Read file and call service*/
-				pushConfigToCPSService(fileName, true, argKeyId, config, editToken);
+				pushConfigToCPSService(fileName, true, argKeyId, config, editToken, false);
+			} else if (args[0].equals("push-file-encrypt-with-pem")) { 
+				String editToken = (args.length > 3) ? args[3] : null;
+				String fileName = (args.length > 1) ? args[1] : null;
+				String argKeyId = (args.length > 2) ? args[2] : null;
+				/* Check if fileName is provided*/
+				if (fileName == null) {
+					String msg = "Need a config json file to push to the CPS service";
+					System.err.println(msg);
+					throw new Exception(msg);
+				}
+				if (argKeyId == null) {
+					String msg = "Need a keyId to be specified, cannot continue with encrypt";
+					System.err.println(msg);
+					throw new Exception(msg);
+				}
+				Properties config = getConfigProperties();
+				/* Read file and call service*/
+				pushConfigToCPSService(fileName, true, argKeyId, config, editToken, true);
 			} else if(args[0].equals("pull-decrypt")) {
 				Properties config = getConfigProperties();
-				pullAndDecryptConfig(args, config);
+				pullAndDecryptConfig(args, config, false);
+			} else if(args[0].equals("pull-decrypt-with-pem")) {
+				Properties config = getConfigProperties();
+				pullAndDecryptConfig(args, config, true);
 			} else if(args[0].equals("delete")) {
 				Properties config = getConfigProperties();
 				deleteConfig(args, config);
@@ -234,7 +254,7 @@ public class CpsTool {
 	 * CPS GET/config service will be called to get the required config
 	 * @param args
 	 */
-	private static void pullAndDecryptConfig(String[] args, Properties config) {
+	private static void pullAndDecryptConfig(String[] args, Properties config, boolean use_pem) {
 		
 		/*Initiate Scanner and Check all Inputs*/
 		Scanner userInput = new Scanner(System.in);
@@ -291,7 +311,7 @@ public class CpsTool {
 		/*Call CPS Service*/
 		if(StringUtils.isNotBlank(resources.toString())) {
 			try {
-				callCpsGetConfigService(resources, editToken, config);
+				callCpsGetConfigService(resources, editToken, config, use_pem);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -433,7 +453,7 @@ public class CpsTool {
 	 * @throws URISyntaxException
 	 * @throws IOException
 	 */
-	private static void callCpsGetConfigService(StringBuilder uriParams, String token, Properties config) throws URISyntaxException, IOException {
+	private static void callCpsGetConfigService(StringBuilder uriParams, String token, Properties config, boolean use_pem) throws URISyntaxException, IOException {
 
 		/* Initialize HttpGet Call*/
 		CloseableHttpClient httpclient = null;
@@ -457,7 +477,7 @@ public class CpsTool {
 					if(StringUtils.equalsIgnoreCase(verboseLogger, "true")) {
 						System.err.println("*********Decrypting the properties*********");
 					}
-					String json = decrypt(content);
+					String json = decrypt(content, use_pem);
 					System.out.println(json);
 				} else {
 					String content = EntityUtils.toString(responseEntity);
@@ -528,12 +548,25 @@ public class CpsTool {
 	 * @param encrypt
 	 * @param argKeyId
 	 * @param config
-	 * @throws URISyntaxException
-	 * @throws UnsupportedEncodingException
-	 * @throws IOException
+	 * @throws Exception 
 	 */
-	private static void pushConfigToCPSService(String fileName, boolean encrypt, String argKeyId, Properties config, String editToken)
-			throws URISyntaxException, UnsupportedEncodingException, IOException {
+	private static void pushConfigToCPSService(String fileName, boolean encrypt, String argKeyId, Properties config, String editToken, boolean use_pem)
+			throws Exception {
+
+		PublicKey publicKey = null;
+		if (use_pem) {
+			File pemFile = new File(argKeyId + ".pem");
+			if (!pemFile.exists() || !pemFile.isFile()) {
+				String msg = "Need the file " + pemFile.getAbsolutePath()
+						+ " to be present, cannot continue with encrypt";
+				System.err.println(msg);
+				throw new Exception(msg);
+			}
+			InputStream is = FileUtils.openInputStream(pemFile);
+			publicKey = KeyStoreHelper.getPublicKeyFromPEM(is);
+			IOUtils.closeQuietly(is);
+		}
+		
 		File file = new File (fileName);
 		Scanner userInput = null;
 		String json = StringUtils.EMPTY;
@@ -583,7 +616,11 @@ public class CpsTool {
 			/*Check if Encrypt True*/
 			if(encrypt) {
 				try {
-					 json = encrypt(argKeyId, json);
+					 if (use_pem) {
+						 json = encrypt(publicKey, argKeyId, json);
+					 } else {
+						 json = encrypt(argKeyId, json);
+					 }
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -906,7 +943,7 @@ public class CpsTool {
 		return new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(payload);
 	}
 
-	private static String decrypt(String data) throws Exception {
+	private static String decrypt(String data, boolean use_pem) throws Exception {
 		Map<String, Object> payload;
 		ObjectMapper mapper;
 		TypeFactory factory;
@@ -924,6 +961,7 @@ public class CpsTool {
 			System.err.println(msg);
 			throw new Exception(msg);
 		}
+		
 
 		Map<String, String> properties = (Map<String, String>) payload.get("properties");
 		boolean priorEncryptions = false;
@@ -943,7 +981,27 @@ public class CpsTool {
 			throw new Exception(msg);
 		}
 
-		CpsEncryptor cpsEncryptor = new CpsEncryptor(keyId, cipherKey);
+		CpsEncryptor cpsEncryptor = null;
+		if (use_pem) {
+			PrivateKey privateKey = null;
+			try {
+				privateKey = KeyStoreHelper.getPrivateKeyFromSystemVariable(keyId);
+			} catch (Exception e) {
+				System.err.println(e.toString());
+				File pkcs8File = new File(keyId + ".pkcs8");
+				if (!pkcs8File.exists() || !pkcs8File.isFile()) {
+					String msg = "Need the file " + pkcs8File.getAbsolutePath()
+							+ " to be present, cannot continue with decrypt";
+					System.err.println(msg);
+					throw new Exception(msg);
+				}
+				privateKey = KeyStoreHelper.getPrivateKeyFromPkcsFile(pkcs8File.getAbsolutePath());
+			}
+			cpsEncryptor = new CpsEncryptor(privateKey, cipherKey);
+		} else {
+			cpsEncryptor = new CpsEncryptor(keyId, cipherKey);
+		}
+		
 		for (String key : properties.keySet()) {
 			String encryptedValue = properties.get(key);
 			String value = cpsEncryptor.decrypt(encryptedValue);
@@ -1049,6 +1107,18 @@ public class CpsTool {
 		System.err.println(
 				"        fileName   The file containing the config to push.");
 		System.err.println(
+				"        keyId         The keyId to use for encrypting the data and for providing the name of the pem file.");
+		System.err.println(
+				"        edit_token    The two-factor token from the authenticator device or a password.");
+		
+		
+		System.err.println("\n    push-file-encrypt-with-pem Read a config json provided in the arguments, encrypt with the keyId.pem and post it to CPS service");
+		System.err.println("      parameters:");
+		System.err.println(
+				"        fileName   The file containing the config to push.");
+		System.err.println(
+				"        keyId         The keyId to use for encrypting the data and for providing the name of the pem file.");
+		System.err.println(
 				"        edit_token    The two-factor token from the authenticator device or a password.");
 		
 		
@@ -1064,6 +1134,20 @@ public class CpsTool {
 				"        envName       The deployment environment name for the config coordinate key.");
 		System.err.println(
 				"        keyId         The encryption keyId for the config coordinate key.");
+		
+		
+		System.err.println("\n    pull-decrypt-with-pem      Retrieve and decrypt a config json file from the CPS service");
+		System.err.println("      parameters:");
+		System.err.println(
+				"        projectName   The project name for the config coordinate key.");
+		System.err.println(
+				"        branchName    The branch name for the config coordinate key.");
+		System.err.println(
+				"        instanceId    The instance id for the config coordinate key.");
+		System.err.println(
+				"        envName       The deployment environment name for the config coordinate key.");
+		System.err.println(
+				"        keyId         The encryption keyId for the config coordinate key and for the pkcs8 file name.");
 		
 		
 		System.err.println("\n    delete      Delete a config json file from the CPS service");
